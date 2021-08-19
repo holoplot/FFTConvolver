@@ -142,6 +142,11 @@ bool FFTConvolver::init(size_t blockSize, const Sample* ir, size_t irLen)
   
   return true;
 }
+  
+bool FFTConvolver::setResponse(const Sample* ir, size_t irLen)
+{  
+  return false;
+}
 
 
 void FFTConvolver::process(const Sample* input, Sample* output, size_t len)
