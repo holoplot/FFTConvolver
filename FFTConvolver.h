@@ -92,6 +92,7 @@ public:
   void reset();
   
 private:
+  size_t _irLen;
   size_t _blockSize;
   size_t _segSize;
   size_t _segCount;

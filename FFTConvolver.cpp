@@ -33,6 +33,7 @@ namespace fftconvolver
 {  
 
 FFTConvolver::FFTConvolver() :
+  _irLen(0),
   _blockSize(0),
   _segSize(0),
   _segCount(0),
@@ -65,6 +66,7 @@ void FFTConvolver::reset()
     delete _segmentsIR[i];
   }
   
+  _irLen = 0;
   _blockSize = 0;
   _segSize = 0;
   _segCount = 0;
@@ -96,15 +98,16 @@ bool FFTConvolver::init(size_t blockSize, const Sample* ir, size_t irLen)
   {
     --irLen;
   }
+  _irLen = irLen;
 
-  if (irLen == 0)
+  if (_irLen == 0)
   {
     return true;
   }
   
   _blockSize = NextPowerOf2(blockSize);
   _segSize = 2 * _blockSize;
-  _segCount = static_cast<size_t>(::ceil(static_cast<float>(irLen) / static_cast<float>(_blockSize)));
+  _segCount = static_cast<size_t>(::ceil(static_cast<float>(_irLen) / static_cast<float>(_blockSize)));
   _fftComplexSize = audiofft::AudioFFT::ComplexSize(_segSize);
   
   // FFT
@@ -121,7 +124,7 @@ bool FFTConvolver::init(size_t blockSize, const Sample* ir, size_t irLen)
   for (size_t i=0; i<_segCount; ++i)
   {
     SplitComplex* segment = new SplitComplex(_fftComplexSize);
-    const size_t remaining = irLen - (i * _blockSize);
+    const size_t remaining = _irLen - (i * _blockSize);
     const size_t sizeCopy = (remaining >= _blockSize) ? _blockSize : remaining;
     CopyAndPad(_fftBuffer, &ir[i*_blockSize], sizeCopy);
     _fft.fft(_fftBuffer.data(), segment->re(), segment->im());
@@ -144,7 +147,12 @@ bool FFTConvolver::init(size_t blockSize, const Sample* ir, size_t irLen)
 }
   
 bool FFTConvolver::setResponse(const Sample* ir, size_t irLen)
-{  
+{
+  if(irLen > _irLen)
+  {
+    return false;
+  }
+  
   return false;
 }
 
