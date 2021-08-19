@@ -148,9 +148,28 @@ bool FFTConvolver::setResponse(const Sample* ir, size_t irLen)
     return false;
   }
 
-  return false;
-}
+  if (_irLen == 0)
+  {
+    return true;
+  }
 
+  // Prepare IR
+  for (size_t i=0; i<_segCount; ++i)
+  {
+    SplitComplex* segment = _segmentsIR[i];
+    const size_t remaining = _irLen - (i * _blockSize);
+    const size_t sizeCopy = (remaining >= _blockSize) ? _blockSize : remaining;
+    CopyAndPad(_fftBuffer, &ir[i*_blockSize], sizeCopy);
+    _fft.fft(_fftBuffer.data(), segment->re(), segment->im());
+  }
+
+  _inputBufferFill = 0;
+
+  // Reset current position
+  _current = 0;
+  
+  return true;
+}
 
 void FFTConvolver::process(const Sample* input, Sample* output, size_t len)
 {
