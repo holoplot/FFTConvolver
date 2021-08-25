@@ -171,6 +171,7 @@ bool FFTConvolver::setResponse(const Sample* ir, size_t newIrLen)
     _segmentsIR[i]->setZero();
   }
 
+  _inputBuffer.setZero();
   _inputBufferFill = 0;
 
   // Reset current position
