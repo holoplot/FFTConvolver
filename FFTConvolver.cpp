@@ -153,13 +153,18 @@ bool FFTConvolver::setResponse(const Sample* ir, size_t newIrLen)
     return true;
   }
 
+  _fftBuffer.setZero();
+  _conv.setZero();
+  _preMultiplied.setZero();
+  _overlap.setZero();
+
   size_t activeSegCount = static_cast<size_t>(::ceil(static_cast<float>(newIrLen) / static_cast<float>(_blockSize)));
 
   // Prepare IR
   for (size_t i = 0; i < activeSegCount; ++i)
   {
     SplitComplex* segment = _segmentsIR[i];
-    const size_t remaining = _irLen - (i * _blockSize);
+    const size_t remaining = newIrLen - (i * _blockSize);
     const size_t sizeCopy = (remaining >= _blockSize) ? _blockSize : remaining;
     CopyAndPad(_fftBuffer, &ir[i*_blockSize], sizeCopy);
     _fft.fft(_fftBuffer.data(), segment->re(), segment->im());
