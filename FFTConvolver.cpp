@@ -166,11 +166,9 @@ bool FFTConvolver::setResponse(const Sample* ir, size_t newIrLen)
   }
 
   // Clear remaining segments
-  for (size_t i = _segCount - activeSegCount; i>0; --i)
+  for (size_t i = activeSegCount; i < _segCount; ++i)
   {
-    SplitComplex* segment = _segmentsIR[i];
-    _fftBuffer.setZero();
-    _fft.fft(_fftBuffer.data(), segment->re(), segment->im());
+    _segmentsIR[i]->setZero();
   }
 
   _inputBufferFill = 0;
