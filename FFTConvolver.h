@@ -66,6 +66,19 @@ public:
   bool init(size_t blockSize, const Sample* ir, size_t irLen);
 
   /**
+  * @brief Updates the impulse response without allocating.
+  * 
+  * The maximum allowed ir length is given by the last call to init().
+  * If necessary, the ir is zero-padded to match the previously stored length.
+  * The partitioning of the convolution algorihm remains unchanged.
+  * 
+  * @param ir The impulse response
+  * @param irLen Length of the impulse response (must be smaller or equal to the length specified upon initialization)
+  * @return true: Success - false: Failed (old response left unchanged)
+  */
+  bool setResponse(const Sample* ir, size_t irLen);
+
+  /**
   * @brief Convolves the the given input samples and immediately outputs the result
   * @param input The input samples
   * @param output The convolution result
@@ -79,9 +92,11 @@ public:
   void reset();
   
 private:
+  size_t _irLen;
   size_t _blockSize;
   size_t _segSize;
   size_t _segCount;
+  size_t _activeSegCount;
   size_t _fftComplexSize;
   std::vector<SplitComplex*> _segments;
   std::vector<SplitComplex*> _segmentsIR;
