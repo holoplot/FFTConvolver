@@ -96,6 +96,7 @@ private:
   size_t _blockSize;
   size_t _segSize;
   size_t _segCount;
+  size_t _activeSegCount;
   size_t _fftComplexSize;
   std::vector<SplitComplex*> _segments;
   std::vector<SplitComplex*> _segmentsIR;

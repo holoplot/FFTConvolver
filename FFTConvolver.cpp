@@ -37,6 +37,7 @@ FFTConvolver::FFTConvolver() :
   _blockSize(0),
   _segSize(0),
   _segCount(0),
+  _activeSegCount(0),
   _fftComplexSize(0),
   _segments(),
   _segmentsIR(),
@@ -70,6 +71,7 @@ void FFTConvolver::reset()
   _blockSize = 0;
   _segSize = 0;
   _segCount = 0;
+  _activeSegCount = 0;
   _fftComplexSize = 0;
   _segments.clear();
   _segmentsIR.clear();
@@ -103,6 +105,7 @@ bool FFTConvolver::init(size_t blockSize, const Sample* ir, size_t irLen)
   _blockSize = NextPowerOf2(blockSize);
   _segSize = 2 * _blockSize;
   _segCount = static_cast<size_t>(::ceil(static_cast<float>(_irLen) / static_cast<float>(_blockSize)));
+  _activeSegCount = _segCount;
   _fftComplexSize = audiofft::AudioFFT::ComplexSize(_segSize);
   
   // FFT
@@ -158,10 +161,10 @@ bool FFTConvolver::setResponse(const Sample* ir, size_t newIrLen)
   _preMultiplied.setZero();
   _overlap.setZero();
 
-  size_t activeSegCount = static_cast<size_t>(::ceil(static_cast<float>(newIrLen) / static_cast<float>(_blockSize)));
+  _activeSegCount = static_cast<size_t>(::ceil(static_cast<float>(newIrLen) / static_cast<float>(_blockSize)));
 
   // Prepare IR
-  for (size_t i = 0; i < activeSegCount; ++i)
+  for (size_t i = 0; i < _activeSegCount; ++i)
   {
     SplitComplex* segment = _segmentsIR[i];
     const size_t remaining = newIrLen - (i * _blockSize);
@@ -171,7 +174,7 @@ bool FFTConvolver::setResponse(const Sample* ir, size_t newIrLen)
   }
 
   // Clear remaining segments
-  for (size_t i = activeSegCount; i < _segCount; ++i)
+  for (size_t i = _activeSegCount; i < _segCount; ++i)
   {
     _segmentsIR[i]->setZero();
   }
@@ -187,7 +190,7 @@ bool FFTConvolver::setResponse(const Sample* ir, size_t newIrLen)
 
 void FFTConvolver::process(const Sample* input, Sample* output, size_t len)
 {
-  if (_segCount == 0)
+  if (_activeSegCount == 0)
   {
     ::memset(output, 0, len * sizeof(Sample));
     return;
@@ -209,10 +212,10 @@ void FFTConvolver::process(const Sample* input, Sample* output, size_t len)
     if (inputBufferWasEmpty)
     {
       _preMultiplied.setZero();
-      for (size_t i=1; i<_segCount; ++i)
+      for (size_t i=1; i<_activeSegCount; ++i)
       {
         const size_t indexIr = i;
-        const size_t indexAudio = (_current + i) % _segCount;
+        const size_t indexAudio = (_current + i) % _activeSegCount;
         ComplexMultiplyAccumulate(_preMultiplied, *_segmentsIR[indexIr], *_segments[indexAudio]);
       }
     }
@@ -237,7 +240,7 @@ void FFTConvolver::process(const Sample* input, Sample* output, size_t len)
       ::memcpy(_overlap.data(), _fftBuffer.data()+_blockSize, _blockSize * sizeof(Sample));
 
       // Update current segment
-      _current = (_current > 0) ? (_current - 1) : (_segCount - 1);
+      _current = (_current > 0) ? (_current - 1) : (_activeSegCount - 1);
     }
 
     processed += processing;
